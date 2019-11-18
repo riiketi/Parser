@@ -36,6 +36,10 @@ namespace Parser
             public string OldPrice { get; set; }
             [Name("URL товара")]
             public string Product_URL { get; set; }
+            [Name("Описание")]
+            public string Description { get; set; }
+            [Name("Полное описание")]
+            public string FullDescription { get; set; }
             [Name("Производитель")]
             public string Vendor { get; set; }
             [Name("Размер дверного блока")]
@@ -113,7 +117,8 @@ namespace Parser
                 string tmp = doc.DocumentNode.SelectSingleNode("//ul[contains(@class, 'uk-pagination uk-flex-center')]").OuterHtml;
                 var tmp1 = new HtmlAgilityPack.HtmlDocument();
                 tmp1.LoadHtml(tmp);
-                int page_count = tmp1.DocumentNode.SelectNodes("//a").Count();
+                int tmp_count = tmp1.DocumentNode.SelectNodes("//a").Count();
+                int page_count = Convert.ToInt32(tmp1.DocumentNode.SelectNodes("//a")[tmp_count-2].InnerText);
                 for (int i = 1; i < page_count; ++i)
                 {
                     string urli = url + "?PAGEN_1=" + (i + 1);
@@ -202,6 +207,22 @@ namespace Parser
             string title = doc.DocumentNode.SelectSingleNode("//h1[contains(@class, 'title-h1')]").InnerText;
             prod.Product = title;
             prod.Product_URL = url;
+            prod.Description = doc.DocumentNode.SelectSingleNode("//head/meta[contains(@name,'description')]").Attributes["content"].Value;
+            try
+            {
+                prod.FullDescription = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'product-item-detail-tab-content active')]").SelectSingleNode("./p").InnerText;
+            }
+            catch
+            {
+                prod.FullDescription = "";
+            }
+            if (prod.Description.Trim() == "")
+            {
+                prod.Description = doc.DocumentNode.SelectSingleNode("//head/meta[contains(@name,'description')]").Attributes["content"].Value;
+                prod.FullDescription = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'product-item-detail-tab-content active')]").SelectSingleNode("./p").InnerText;
+            }
+            //product-item-detail-tab-content active
+
             string oldprice = "";
             if (doc.GetElementbyId("oldprice") != null)
             {
