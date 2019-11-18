@@ -40,6 +40,8 @@ namespace Parser
             public string Description { get; set; }
             [Name("Полное описание")]
             public string FullDescription { get; set; }
+            [Name("URL изображения")]
+            public string UrlImg { get; set; }
             [Name("Производитель")]
             public string Vendor { get; set; }
             [Name("Размер дверного блока")]
@@ -174,7 +176,21 @@ namespace Parser
             {
                 doc.Load(Path_tb.Text, Encoding.UTF8);
             }
-            
+            try
+            {
+                prod.UrlImg = doc.GetElementbyId("dooroutpicture").Attributes["data-lazy"].Value;
+            }
+            catch
+            {
+                try
+                {
+                    prod.UrlImg = doc.GetElementbyId("dooroutpicture").Attributes["src"].Value;
+                }
+                catch
+                {
+                    prod.UrlImg = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'slide ')]").SelectSingleNode("./a").Attributes["href"].Value;
+                }
+            }
             HtmlNodeCollection lis = doc.DocumentNode.SelectSingleNode("//ul[contains(@class, 'breadcrumbs')]").SelectNodes("./li");
             string cat = "";
             string tmp = "";
@@ -197,13 +213,11 @@ namespace Parser
                     cat = cat + tmp + '/';
                 }
                 tmp = li.InnerText.Trim();
-                
             }
             cat = cat.Trim('/');
             prod.Category = cat;
             hrefmax = hrefmax.Trim('/');
             prod.Category_URL = hrefmax;
-            //HtmlNodeCollection titl = doc.DocumentNode.SelectSingleNode("//h1[contains(@class, 'title-h1')]").InnerText;
             string title = doc.DocumentNode.SelectSingleNode("//h1[contains(@class, 'title-h1')]").InnerText;
             prod.Product = title;
             prod.Product_URL = url;
@@ -221,16 +235,14 @@ namespace Parser
                 prod.Description = doc.DocumentNode.SelectSingleNode("//head/meta[contains(@name,'description')]").Attributes["content"].Value;
                 prod.FullDescription = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'product-item-detail-tab-content active')]").SelectSingleNode("./p").InnerText;
             }
-            //product-item-detail-tab-content active
-
             string oldprice = "";
             if (doc.GetElementbyId("oldprice") != null)
             {
-                oldprice = doc.GetElementbyId("oldprice").InnerText.Trim();
+                oldprice = doc.GetElementbyId("oldprice").InnerText.Trim().Trim('.').Trim('р').Trim();
             }
-            prod.OldPrice = oldprice;
+            prod.OldPrice = oldprice.Trim('.').Trim('р').Trim();
             string currprice = "";
-            currprice = doc.GetElementbyId("itogpricedoors").InnerText.Trim();
+            currprice = doc.GetElementbyId("itogpricedoors").InnerText.Trim().Trim('.').Trim('р').Trim();
             if (currprice == "")
                 try
                 {
@@ -238,7 +250,7 @@ namespace Parser
                 }
                 catch
                 { }
-            prod.Price = currprice;
+            prod.Price = currprice.Trim('.').Trim('р').Trim();
             HtmlNode tbody = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'uk-overflow-auto')]").SelectSingleNode("./table/tbody");
             foreach (HtmlNode tr in tbody.SelectNodes("./tr"))
             {
@@ -255,12 +267,6 @@ namespace Parser
                         break;
                     }
                 }
-                /*
-                foreach(HtmlNode td in tr.SelectNodes("./td"))
-                {
-                    string a = td.InnerText;
-                }
-                */
             }
             products.Add(prod);
         }
